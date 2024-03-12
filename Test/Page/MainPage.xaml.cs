@@ -1,20 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Entity;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Test.Model;
 
 namespace Test.Page
 {
@@ -23,33 +10,91 @@ namespace Test.Page
     /// </summary>
     public partial class MainPage
     {
-        private TestEntities dbContext = new TestEntities();
+
         public MainPage()
         {
             InitializeComponent();
-            dataGridPackages.ItemsSource = dbContext.GlassPackages.ToList();
         }
 
-        private void btnCheckArticle_Click(object sender, RoutedEventArgs e)
+        private void AnalyzeButton_Click(object sender, RoutedEventArgs e)
         {
-            string article = txtArticle.Text;
+            string article = ArticleTextBox.Text.Trim();
 
-            try
+            if (string.IsNullOrEmpty(article))
             {
-                var package = dbContext.GlassPackages.FirstOrDefault(p => p.Article == article);
-                if (package != null)
-                {
-                    dataGridPackages.ItemsSource = new[] { package };
-                }
-                else
-                {
-                    MessageBox.Show("Стеклопакет с указанным артикулом не найден.");
-                }
+                MessageBox.Show("Введите артикуль");
+                return;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Ошибка: " + ex.Message);
-            }
+
+            AnalyzeGlassPackage(article);
         }
+
+        private void AnalyzeGlassPackage(string article)
+        {
+            string[] parts = article.Split(new char[] { '/', '\\' });
+
+            int elementCount = parts.Length;
+
+            int chamberCount = elementCount / 2;
+            //Почему то артикли с m1 прибавляют 1 к числу, хотя не должно
+            int glassThickness = GetGlassThickness(article);
+            bool isDoubleChambered = chamberCount == 2;
+
+            int totalThickness = parts.Sum(p => GetThickness(p));
+
+            MessageBox.Show($"Артикуль: {article}\n" +
+                            $"Камерность: {chamberCount}\n" +
+                            $"Толщина СП: {totalThickness}\n" +
+                            $"Толщина стекла: {glassThickness-1}");
+        }
+
+        private int GetThickness(string part)
+        {
+            string thicknessStr = new string(part.TakeWhile(c => char.IsDigit(c) || c == ' ').ToArray());
+            return string.IsNullOrEmpty(thicknessStr) ? 0 : thicknessStr.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Sum(s => int.Parse(s));
+        }
+
+        private int GetGlassThickness(string article)
+        {
+            string[] parts = article.Split(new char[] { '/' });
+
+            int totalGlassThickness = 0;
+
+            totalGlassThickness += GetFirstNumber(parts[0]);
+
+            for (int i = 1; i < parts.Length; i++)
+            {
+                if (i % 2 == 0)
+                {
+                    MatchCollection matches = Regex.Matches(parts[i], @"\d+");
+
+                    foreach (Match match in matches)
+                    {
+                        if (int.TryParse(match.Value, out int thickness))
+                        {
+                            totalGlassThickness += thickness;
+                        }
+                    }
+                }
+            }
+
+            return totalGlassThickness;
+        }
+
+        private int GetFirstNumber(string input)
+        {
+            Match match = Regex.Match(input, @"\d+");
+
+            if (match.Success)
+            {
+                if (int.TryParse(match.Value, out int thickness))
+                {
+                    return thickness;
+                }
+            }
+
+            return 0;
+        }
+
     }
 }

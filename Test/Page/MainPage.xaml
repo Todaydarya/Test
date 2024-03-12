@@ -9,17 +9,10 @@
       Title="Главная страница">
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
-            <Label Content="Артикул:"/>
-            <TextBox x:Name="txtArticle" Width="150" Margin="5"/>
-            <Button Name="btnCheckArticle" Content="Показать информацию" Click="btnCheckArticle_Click"/>
+        <StackPanel Margin="10">
+            <Label Content="Введите артикуль"/>
+            <TextBox x:Name="ArticleTextBox" Margin="0 5 0 10"/>
+            <Button Content="Analyze" Click="AnalyzeButton_Click"/>
         </StackPanel>
-
-        <DataGrid x:Name="dataGridPackages" Grid.Row="1" AutoGenerateColumns="True" Margin="10" CanUserAddRows="False"/>
     </Grid>
 </Page>
